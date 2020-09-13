@@ -9,6 +9,8 @@
         OtherFees,
         [EnumName("Withholding Tax")]
         WithholdingTax,
+        [EnumName("871(m) Withholding")]
+        Withholding871,
         [EnumName("Dividends")]
         Dividends,
         [EnumName("Payment In Lieu Of Dividends")]
@@ -20,6 +22,8 @@
         [EnumName("Deposits/Withdrawals")]
         DepositsWithdrawals,
         [EnumName("Broker Interest Received")]
-        BrokerInterestReceived
+        BrokerInterestReceived,
+        [EnumName("Bond Interest Received")]
+        BondInterestReceived
     }
 }

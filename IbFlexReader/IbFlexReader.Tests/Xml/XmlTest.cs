@@ -7,6 +7,7 @@
     using IbFlexReader.Xml;
     using IbFlexReader.Xml.Contracts;
     using NUnit.Framework;
+    using Contracts = IbFlexReader.Contracts;
     using FlexQueryResponse = IbFlexReader.Xml.Contracts.QueryResponse.FlexQueryResponse;
 
     public class XmlTest
@@ -42,9 +43,9 @@ https://gdcdyn.interactivebrokers.com/Universal/servlet/FlexStatementService.Get
             var str = StringFactory.XmlStart + StringFactory.XmlEnd;
 
             var obj = Deserializer.Deserialize<FlexQueryResponse, Contracts.FlexQueryResponse>(sb.GenerateStream(str), out var msg);
-            obj.FlexStatements.FlexStatement.FromDate.Should().Be(new DateTime(2018, 09, 17));
-            obj.FlexStatements.FlexStatement.WhenGenerated.Should().Be(new DateTime(2018, 10, 17, 14, 32, 11));
-            obj.FlexStatements.FlexStatement.ToDate.Should().Be(new DateTime(2018, 10, 16));
+            obj.FlexStatements.FlexStatement[0].FromDate.Should().Be(new DateTime(2018, 09, 17));
+            obj.FlexStatements.FlexStatement[0].WhenGenerated.Should().Be(new DateTime(2018, 10, 17, 14, 32, 11));
+            obj.FlexStatements.FlexStatement[0].ToDate.Should().Be(new DateTime(2018, 10, 16));
             obj.FlexStatements.Count.Should().Be(1);
         }
 
@@ -56,7 +57,7 @@ https://gdcdyn.interactivebrokers.com/Universal/servlet/FlexStatementService.Get
                 + StringFactory.XmlEnd;
 
             var obj = Deserializer.Deserialize<FlexQueryResponse, Contracts.FlexQueryResponse>(sb.GenerateStream(str), out var msg);
-            var accInfo = obj.FlexStatements.FlexStatement.AccountInformation;
+            var accInfo = obj.FlexStatements.FlexStatement[0].AccountInformation;
             accInfo.AccountId.Should().Be("xxxxxx");
             accInfo.Currency.Should().Be(Currencies.EUR);
             accInfo.DateOpened.Should().Be(new DateTime(2015, 4, 21));
@@ -72,7 +73,7 @@ https://gdcdyn.interactivebrokers.com/Universal/servlet/FlexStatementService.Get
 </EquitySummaryInBase>" + StringFactory.XmlEnd;
 
             var obj = Deserializer.Deserialize<FlexQueryResponse, Contracts.FlexQueryResponse>(sb.GenerateStream(str), out var msg);
-            var summaryInBase = obj.FlexStatements.FlexStatement.EquitySummaryInBase;
+            var summaryInBase = obj.FlexStatements.FlexStatement[0].EquitySummaryInBase;
             summaryInBase.EquitySummaryByReportDateInBase.Count.Should().Be(2);
             var entry = summaryInBase.EquitySummaryByReportDateInBase[0];
             entry.Cash.Should().BeApproximately(-13262.92, 0.01);
@@ -89,7 +90,7 @@ https://gdcdyn.interactivebrokers.com/Universal/servlet/FlexStatementService.Get
 </OpenPositions>" + StringFactory.XmlEnd;
 
             var obj = Deserializer.Deserialize<FlexQueryResponse, Contracts.FlexQueryResponse>(sb.GenerateStream(str), out var msg);
-            var openPositions = obj.FlexStatements.FlexStatement.OpenPositions;
+            var openPositions = obj.FlexStatements.FlexStatement[0].OpenPositions;
             openPositions.OpenPosition.Count.Should().Be(4);
             var first = openPositions.OpenPosition[0];
             first.AssetCategory.Should().Be(AssetCategory.STK);
@@ -109,9 +110,22 @@ https://gdcdyn.interactivebrokers.com/Universal/servlet/FlexStatementService.Get
 </Trades>" + StringFactory.XmlEnd;
 
             var obj = Deserializer.Deserialize<FlexQueryResponse, Contracts.FlexQueryResponse>(sb.GenerateStream(str), out var msg);
-            var trades = obj.FlexStatements.FlexStatement.Trades.Trade;
+            var trades = obj.FlexStatements.FlexStatement[0].Trades.Trade;
             trades.Count.Should().Be(4);
             trades[0].Notes.Value.Should().Be(Notes.Assigned);
+        }
+
+        [Test]
+        public void TestTrades_QuantityIsDouble()
+        {
+            var str = StringFactory.XmlStart + @"<Trades>
+<Trade accountId=""U3042194"" acctAlias="""" model="""" currency=""USD"" fxRateToBase=""0.92391"" assetCategory=""STK"" symbol=""OSTKO"" description=""OVERSTOCK.COM INC - PFD A-1"" conid=""419209157"" securityID=""US6903705076"" securityIDType=""ISIN"" cusip=""690370507"" isin=""US6903705076"" listingExchange=""VALUE"" underlyingConid="""" underlyingSymbol="""" underlyingSecurityID="""" underlyingListingExchange="""" issuer="""" multiplier=""1"" strike="""" expiry="""" tradeID="""" putCall="""" reportDate=""20200424"" principalAdjustFactor="""" dateTime=""20200423;202500"" tradeDate=""20200423"" settleDateTarget="""" transactionType=""FracShare"" exchange=""--"" quantity=""-0.5"" tradePrice=""0.0118"" tradeMoney=""-0.0059"" proceeds=""0.0059"" taxes=""0"" ibCommission=""0"" ibCommissionCurrency=""USD"" netCash=""0.0059"" closePrice=""0.0001"" openCloseIndicator=""C"" notes="""" cost=""-0.000082"" fifoPnlRealized=""0.005818"" fxPnl=""0"" mtmPnl=""0.0059"" origTradePrice=""0"" origTradeDate="""" origTradeID="""" origOrderID=""0"" clearingFirmID="""" transactionID=""12578777639"" buySell=""SELL"" ibOrderID=""12578777639"" ibExecID="""" brokerageOrderID="""" orderReference="""" volatilityOrderLink="""" exchOrderId=""N/A"" extExecID=""N/A"" orderTime="""" openDateTime="""" holdingPeriodDateTime="""" whenRealized="""" whenReopened="""" levelOfDetail=""EXECUTION"" changeInPrice=""0"" changeInQuantity=""0"" orderType="""" traderID="""" isAPIOrder=""N"" />
+</Trades>" + StringFactory.XmlEnd;
+
+            var obj = Deserializer.Deserialize<FlexQueryResponse, Contracts.FlexQueryResponse>(sb.GenerateStream(str), out var msg);
+            var trades = obj.FlexStatements.FlexStatement[0].Trades.Trade;
+            trades.Count.Should().Be(1);
+            trades[0].Quantity.Value.Should().Be(-0.5);
         }
 
         [Test]
@@ -129,7 +143,7 @@ https://gdcdyn.interactivebrokers.com/Universal/servlet/FlexStatementService.Get
 </CashTransactions>
 " + StringFactory.XmlEnd;
             var obj = Deserializer.Deserialize<FlexQueryResponse, Contracts.FlexQueryResponse>(sb.GenerateStream(str), out var msg);
-            var transactions = obj.FlexStatements.FlexStatement.CashTransactions.CashTransaction;
+            var transactions = obj.FlexStatements.FlexStatement[0].CashTransactions.CashTransaction;
             transactions.Count.Should().Be(8);
         }
 
@@ -140,7 +154,7 @@ https://gdcdyn.interactivebrokers.com/Universal/servlet/FlexStatementService.Get
 <Trade accountId=""xxxxx"" acctAlias=""xxxxx"" model="""" currency=""USD"" fxRateToBase=""0.86156"" assetCategory=""STK"" symbol=""BP"" description=""BP PLC-SPONS ADR"" conid=""5171"" securityID="""" securityIDType="""" cusip="""" isin="""" listingExchange=""NYSE"" underlyingConid="""" underlyingSymbol="""" underlyingSecurityID="""" underlyingListingExchange="""" issuer="""" multiplier=""1"" strike="""" expiry="""" tradeID=""2223171268"" putCall="""" reportDate=""20180928"" principalAdjustFactor="""" dateTime=""20180928;121440"" settleDateTarget=""20181002"" transactionType=""ExchTrade"" exchange=""ISLAND"" quantity=""100"" tradePrice=""46.43"" tradeMoney=""4643"" proceeds=""-4643"" taxes=""0"" ibCommission=""-2"" ibCommissionCurrency=""USD"" netCash=""-4645"" closePrice=""46.1"" openCloseIndicator=""C"" notes="""" cost=""4694"" fifoPnlRealized=""49"" fxPnl=""0"" mtmPnl=""-33"" origTradePrice=""0"" origTradeDate="""" origTradeID="""" origOrderID=""0"" clearingFirmID="""" transactionID=""9601735128"" buySell=""BUY"" ibOrderID=""1093940321"" ibExecID=""00011e50.5badf9c3.01.01"" brokerageOrderID=""000fcf6e.000174c4.5badc949.0001"" orderReference="""" volatilityOrderLink="""" exchOrderId=""N/A"" extExecID=""0327610381"" orderTime=""20180928;121440"" openDateTime="""" holdingPeriodDateTime="""" whenRealized="""" whenReopened="""" levelOfDetail=""EXECUTION"" changeInPrice=""0"" changeInQuantity=""0"" orderType=""LMT"" traderID="""" isAPIOrder=""N"" />
 </Trades>" + StringFactory.XmlEnd;
             var obj = Deserializer.Deserialize<FlexQueryResponse, Contracts.FlexQueryResponse>(sb.GenerateStream(str), out var msg);
-            var trades = obj.FlexStatements.FlexStatement.Trades.Trade;
+            var trades = obj.FlexStatements.FlexStatement[0].Trades.Trade;
             trades[0].TradeDateTime.Should().Be(new DateTime(2018, 09, 27, 14, 51, 31));
         }
 
@@ -153,7 +167,7 @@ https://gdcdyn.interactivebrokers.com/Universal/servlet/FlexStatementService.Get
 <Trade accountId=""xxxxx"" acctAlias=""xxxxx"" model="""" currency=""USD"" fxRateToBase=""0.86156"" assetCategory=""STK"" symbol=""BP"" description=""BP PLC-SPONS ADR"" conid=""5171"" securityID="""" securityIDType="""" cusip="""" isin="""" listingExchange=""NYSE"" underlyingConid="""" underlyingSymbol="""" underlyingSecurityID="""" underlyingListingExchange="""" issuer="""" multiplier=""1"" strike="""" expiry="""" tradeID=""2223171268"" putCall="""" reportDate=""20180928"" principalAdjustFactor="""" dateTime=""20180928;121440"" settleDateTarget=""20181002"" transactionType=""ExchTrade"" exchange=""ISLAND"" quantity=""100"" tradePrice=""46.43"" tradeMoney=""4643"" proceeds=""-4643"" taxes=""0"" ibCommission=""-2"" ibCommissionCurrency=""USD"" netCash=""-4645"" closePrice=""46.1"" openCloseIndicator=""C"" notes="""" cost=""4694"" fifoPnlRealized=""49"" fxPnl=""0"" mtmPnl=""-33"" origTradePrice=""0"" origTradeDate="""" origTradeID="""" origOrderID=""0"" clearingFirmID="""" transactionID=""9601735128"" buySell=""BUY"" ibOrderID=""1093940321"" ibExecID=""00011e50.5badf9c3.01.01"" brokerageOrderID=""000fcf6e.000174c4.5badc949.0001"" orderReference="""" volatilityOrderLink="""" exchOrderId=""N/A"" extExecID=""0327610381"" orderTime=""20180928;121440"" openDateTime="""" holdingPeriodDateTime="""" whenRealized="""" whenReopened="""" levelOfDetail=""EXECUTION"" changeInPrice=""0"" changeInQuantity=""0"" orderType=""LMT"" traderID="""" isAPIOrder=""N"" />
 </Trades>" + StringFactory.XmlEnd;
             var obj = Deserializer.Deserialize<FlexQueryResponse, Contracts.FlexQueryResponse>(sb.GenerateStream(str), out var msg);
-            var trades = obj.FlexStatements.FlexStatement.Trades.Trade;
+            var trades = obj.FlexStatements.FlexStatement[0].Trades.Trade;
             trades[0].Currency.Should().Be(Currencies.USD);
             msg.Count.Should().Be(1);
             msg[0].Message.Should().Contain("Currency");
@@ -169,7 +183,7 @@ https://gdcdyn.interactivebrokers.com/Universal/servlet/FlexStatementService.Get
 </Trades>" + StringFactory.XmlEnd;
 
             var obj = Deserializer.Deserialize<FlexQueryResponse, Contracts.FlexQueryResponse>(sb.GenerateStream(str), out var msg);
-            var trades = obj.FlexStatements.FlexStatement.Trades.Trade;
+            var trades = obj.FlexStatements.FlexStatement[0].Trades.Trade;
             trades[0].Currency.Should().Be(Currencies.USD);
             trades[0].Quantity.Should().Be(-20000);
             trades.Count.Should().Be(3);
